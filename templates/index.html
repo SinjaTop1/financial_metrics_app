@@ -1,0 +1,369 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Metrics Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .card-header {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+        }
+        .metric-card {
+            transition: transform 0.3s;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        .tabs-container {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+        }
+        .nav-tabs .nav-link {
+            margin-bottom: -2px;
+            border: none;
+            color: #495057;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            background-color: transparent;
+            border-bottom: 2px solid #0d6efd;
+        }
+        .tab-content {
+            padding: 20px 0;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .data-table td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        #charts-container {
+            display: none;
+        }
+        .chart-wrapper {
+            height: 400px;
+            margin-bottom: 30px;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-outline-primary {
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+        .btn-outline-primary:hover {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="text-center">Financial Metrics Dashboard</h1>
+            </div>
+            <div class="card-body">
+                <form id="analysis-form" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label for="company">Select Company:</label>
+                                <select class="form-control" id="company" name="company">
+                                    {% for symbol, name in companies.items() %}
+                                    <option value="{{ symbol }}">{{ symbol }} - {{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label for="years">Years of Data:</label>
+                                <select class="form-control" id="years" name="years">
+                                    {% for i in range(1, 11) %}
+                                    <option value="{{ i }}" {% if i == 5 %}selected{% endif %}>{{ i }} Year{% if i > 1 %}s{% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary btn-block w-100">Analyze</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+
+                <div id="results-container" style="display: none;">
+                    <div class="mb-4">
+                        <h2 id="company-title" class="text-center mb-4"></h2>
+                        
+                        <form id="download-form" method="post" action="/download" class="text-center mb-4">
+                            <input type="hidden" id="download-company" name="company">
+                            <input type="hidden" id="download-years" name="years">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                </svg>
+                                Download Excel
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="tabs-container">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab" aria-controls="metrics" aria-selected="true">Key Metrics</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab" aria-controls="charts" aria-selected="false">Charts</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab" aria-controls="financial" aria-selected="false">Financial Statements</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
+                                <div id="metrics-container" class="mt-4"></div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="charts" role="tabpanel" aria-labelledby="charts-tab">
+                                <div id="charts-container" class="mt-4">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="chart-wrapper" id="liquidity-chart"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="chart-wrapper" id="efficiency-chart"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="chart-wrapper" id="profitability-chart"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="chart-wrapper" id="solvency-chart"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="financial" role="tabpanel" aria-labelledby="financial-tab">
+                                <div class="financial-statements mt-4">
+                                    <h4>Balance Sheet</h4>
+                                    <div id="balance-sheet-container" class="table-responsive"></div>
+                                    
+                                    <h4 class="mt-4">Income Statement</h4>
+                                    <div id="income-stmt-container" class="table-responsive"></div>
+                                    
+                                    <h4 class="mt-4">Cash Flow</h4>
+                                    <div id="cash-flow-container" class="table-responsive"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Financial Metrics Explanations</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card metric-card h-100">
+                            <div class="card-header">Liquidity Ratios</div>
+                            <div class="card-body">
+                                <p><strong>Current Ratio</strong>: Current Assets / Current Liabilities<br>
+                                Measures a company's ability to pay short-term obligations.</p>
+                                
+                                <p><strong>Quick Ratio</strong>: (Current Assets - Inventory) / Current Liabilities<br>
+                                A more stringent measure of liquidity that excludes inventory.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card metric-card h-100">
+                            <div class="card-header">Efficiency Ratios</div>
+                            <div class="card-body">
+                                <p><strong>Current Asset Turnover</strong>: Revenue / Average Current Assets<br>
+                                Measures how efficiently a company is using its current assets to generate revenue.</p>
+                                
+                                <p><strong>Total Asset Turnover</strong>: Revenue / Average Total Assets<br>
+                                Measures how efficiently a company is using all its assets to generate revenue.</p>
+                                
+                                <p><strong>Days Sales Outstanding</strong>: (Accounts Receivable / Revenue) * 365<br>
+                                Average number of days it takes to collect payment after a sale.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card metric-card h-100">
+                            <div class="card-header">Profitability Ratios</div>
+                            <div class="card-body">
+                                <p><strong>Profit Margin</strong>: Net Income / Revenue<br>
+                                Shows how much of each dollar of revenue is retained as net income.</p>
+                                
+                                <p><strong>Return on Equity</strong>: Net Income / Shareholders' Equity<br>
+                                Measures how efficiently a company uses its equity to generate profits.</p>
+                                
+                                <p><strong>Basic Earning Power</strong>: EBIT / Total Assets<br>
+                                Shows the raw earning power of a company's assets before tax and leverage impact.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card metric-card h-100">
+                            <div class="card-header">Solvency Ratios</div>
+                            <div class="card-body">
+                                <p><strong>Debt Ratio</strong>: Total Liabilities / Total Assets<br>
+                                Measures the proportion of company assets that are financed by debt.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-4 mb-5 text-center text-muted">
+            <p>Data source: Yahoo Finance API | Last updated: April 2025</p>
+        </footer>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Form submission
+            $('#analysis-form').submit(function(e) {
+                e.preventDefault();
+                
+                const company = $('#company').val();
+                const years = $('#years').val();
+                
+                // Update download form values
+                $('#download-company').val(company);
+                $('#download-years').val(years);
+                
+                // Show loading indicator and hide results
+                $('#loading').show();
+                $('#results-container').hide();
+                $('#error-message').hide();
+                
+                // AJAX request
+                $.ajax({
+                    url: '/analyze',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $('#loading').hide();
+                        
+                        if (response.error) {
+                            $('#error-message').text('Error: ' + response.error).show();
+                            return;
+                        }
+                        
+                        // Set company title
+                        const companyName = $('#company option:selected').text();
+                        $('#company-title').text(companyName + ' - Financial Analysis');
+                        
+                        // Populate metrics
+                        $('#metrics-container').html(response.metrics);
+                        
+                        // Populate financial statements
+                        $('#balance-sheet-container').html(response.balance_sheet);
+                        $('#income-stmt-container').html(response.income_stmt);
+                        $('#cash-flow-container').html(response.cash_flow);
+                        
+                        // Create charts
+                        Plotly.newPlot('liquidity-chart', JSON.parse(response.charts.liquidity).data, JSON.parse(response.charts.liquidity).layout);
+                        Plotly.newPlot('efficiency-chart', JSON.parse(response.charts.efficiency).data, JSON.parse(response.charts.efficiency).layout);
+                        Plotly.newPlot('profitability-chart', JSON.parse(response.charts.profitability).data, JSON.parse(response.charts.profitability).layout);
+                        Plotly.newPlot('solvency-chart', JSON.parse(response.charts.solvency).data, JSON.parse(response.charts.solvency).layout);
+                        
+                        // Show charts container
+                        $('#charts-container').show();
+                        
+                        // Show results
+                        $('#results-container').show();
+                        
+                        // Handle window resize for charts
+                        window.addEventListener('resize', function() {
+                            Plotly.relayout('liquidity-chart', {});
+                            Plotly.relayout('efficiency-chart', {});
+                            Plotly.relayout('profitability-chart', {});
+                            Plotly.relayout('solvency-chart', {});
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        $('#loading').hide();
+                        $('#error-message').text('Error: Unable to process request. Please try again later.').show();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
