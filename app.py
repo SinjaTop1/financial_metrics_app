@@ -373,7 +373,8 @@ def calculate_metrics(ticker, years_back=5):
                 x=1
             ),
             template='plotly_white',
-            height=500
+            height=500,
+            margin=dict(l=60, r=40, t=80, b=60)  # Add appropriate margins
         )
         chart_data['liquidity'] = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
         
@@ -435,7 +436,8 @@ def calculate_metrics(ticker, years_back=5):
                 x=1
             ),
             template='plotly_white',
-            height=500
+            height=500,
+            margin=dict(l=60, r=40, t=80, b=60)  # Add appropriate margins
         )
         chart_data['efficiency'] = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
         
@@ -509,6 +511,7 @@ def calculate_metrics(ticker, years_back=5):
             ),
             template='plotly_white',
             height=500,
+            margin=dict(l=60, r=40, t=80, b=60),  # Add appropriate margins
             barmode='group'
         )
         chart_data['profitability'] = json.dumps(fig3, cls=plotly.utils.PlotlyJSONEncoder)
@@ -552,7 +555,8 @@ def calculate_metrics(ticker, years_back=5):
                 x=1
             ),
             template='plotly_white',
-            height=500
+            height=500,
+            margin=dict(l=60, r=40, t=80, b=60)  # Add appropriate margins
         )
         chart_data['solvency'] = json.dumps(fig4, cls=plotly.utils.PlotlyJSONEncoder)
         
@@ -598,7 +602,8 @@ def calculate_metrics(ticker, years_back=5):
                     x=1
                 ),
                 template='plotly_white',
-                height=500
+                height=500,
+                margin=dict(l=60, r=40, t=80, b=60)  # Add appropriate margins
             )
             chart_data['dso'] = json.dumps(fig5, cls=plotly.utils.PlotlyJSONEncoder)
         
@@ -675,7 +680,8 @@ def calculate_metrics(ticker, years_back=5):
             },
             showlegend=True,
             template='plotly_white',
-            height=600
+            height=650,  # Increased from 600
+            margin=dict(l=80, r=80, t=100, b=80)  # Add more margin space
         )
         chart_data['radar'] = json.dumps(fig6, cls=plotly.utils.PlotlyJSONEncoder)
         
@@ -762,66 +768,91 @@ def download():
             # Create Word document with specified structure
             doc = Document()
             
-            # Set up document styles
-            styles = doc.styles
+            # Set up document styles with try/except to handle potential style conflicts
+            try:
+                styles = doc.styles
+                
+                # Check if styles already exist before creating them
+                style_names = [s.name for s in styles]
+                
+                # Create title style if it doesn't exist
+                if 'Title Style' not in style_names:
+                    title_style = styles.add_style('Title Style', WD_STYLE_TYPE.PARAGRAPH)
+                    title_style.font.bold = True
+                    title_style.font.size = Pt(16)
+                    title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    title_style.paragraph_format.space_after = Pt(12)
+                else:
+                    title_style = 'Title Style'
+                
+                # Create heading style if it doesn't exist
+                if 'Heading Style' not in style_names:
+                    heading_style = styles.add_style('Heading Style', WD_STYLE_TYPE.PARAGRAPH)
+                    heading_style.font.bold = True
+                    heading_style.font.size = Pt(14)
+                    heading_style.paragraph_format.space_before = Pt(12)
+                    heading_style.paragraph_format.space_after = Pt(6)
+                else:
+                    heading_style = 'Heading Style'
+                
+                # Create normal style if it doesn't exist
+                if 'Normal Style' not in style_names:
+                    normal_style = styles.add_style('Normal Style', WD_STYLE_TYPE.PARAGRAPH)
+                    normal_style.font.size = Pt(11)
+                    normal_style.paragraph_format.space_after = Pt(6)
+                else:
+                    normal_style = 'Normal Style'
+                
+                # Create table header style if it doesn't exist
+                if 'Table Header' not in style_names:
+                    table_header = styles.add_style('Table Header', WD_STYLE_TYPE.PARAGRAPH)
+                    table_header.font.bold = True
+                    table_header.font.size = Pt(11)
+                else:
+                    table_header = 'Table Header'
+                
+            except Exception as style_error:
+                # Fall back to built-in styles if custom style creation fails
+                print(f"Style creation error: {style_error}")
+                # Use built-in styles instead
+                title_style = 'Title'
+                heading_style = 'Heading 1'
+                normal_style = 'Normal'
+                table_header = 'Strong'
             
-            # Create a title style
-            title_style = styles.add_style('Title Style', WD_STYLE_TYPE.PARAGRAPH)
-            title_style.font.bold = True
-            title_style.font.size = Pt(16)
-            title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            title_style.paragraph_format.space_after = Pt(12)
-            
-            # Create heading styles
-            heading_style = styles.add_style('Heading Style', WD_STYLE_TYPE.PARAGRAPH)
-            heading_style.font.bold = True
-            heading_style.font.size = Pt(14)
-            heading_style.paragraph_format.space_before = Pt(12)
-            heading_style.paragraph_format.space_after = Pt(6)
-            
-            # Create normal text style
-            normal_style = styles.add_style('Normal Style', WD_STYLE_TYPE.PARAGRAPH)
-            normal_style.font.size = Pt(11)
-            normal_style.paragraph_format.space_after = Pt(6)
-            
-            # Create table header style
-            table_header = styles.add_style('Table Header', WD_STYLE_TYPE.PARAGRAPH)
-            table_header.font.bold = True
-            table_header.font.size = Pt(11)
-            
-            # Title page
-            title = doc.add_paragraph(f"Financial Analysis Report: {companies[ticker]}", style='Title Style')
-            doc.add_paragraph(f"Symbol: {ticker}", style='Normal Style')
-            doc.add_paragraph(f"Report Generated: {datetime.now().strftime('%B %d, %Y')}", style='Normal Style')
+            # Title page (use style names as strings in case we're using fallback)
+            title = doc.add_paragraph(f"Financial Analysis Report: {companies[ticker]}", style=title_style)
+            doc.add_paragraph(f"Symbol: {ticker}", style=normal_style)
+            doc.add_paragraph(f"Report Generated: {datetime.now().strftime('%B %d, %Y')}", style=normal_style)
             
             # Abstract
             doc.add_heading("Abstract", level=1)
             doc.add_paragraph("This report provides a comprehensive financial analysis of " + 
                              f"{companies[ticker]} based on data retrieved from Yahoo Finance. " +
                              "The analysis includes key financial ratios, trend analysis, and policy recommendations.", 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Introduction
             doc.add_heading("Introduction", level=1)
             
             # Add company description if available
             if ticker in company_descriptions:
-                doc.add_paragraph(company_descriptions[ticker], style='Normal Style')
+                doc.add_paragraph(company_descriptions[ticker], style=normal_style)
             else:
                 doc.add_paragraph(f"{companies[ticker]} is a publicly traded company with the ticker symbol {ticker}.", 
-                                 style='Normal Style')
+                                 style=normal_style)
             
             # Add industry context
             doc.add_paragraph("This analysis examines the company's financial performance through various metrics " +
                              "and compares them with industry averages to provide context for the company's financial health.", 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Financial Ratios Section
             doc.add_heading("Financial Ratios Analysis", level=1)
             
             # 1. Liquidity Ratios
             doc.add_heading("Liquidity Ratios", level=2)
-            doc.add_paragraph("Liquidity ratios measure the company's ability to meet short-term obligations.", style='Normal Style')
+            doc.add_paragraph("Liquidity ratios measure the company's ability to meet short-term obligations.", style=normal_style)
             
             # Get most recent data
             recent_year = metrics.index[0]
@@ -831,51 +862,51 @@ def download():
             industry_cr = metrics.loc['Current Ratio', 'Industry Average']
             cr_analysis = "above" if current_ratio > industry_cr else "below"
             
-            doc.add_paragraph(f"Current Ratio: {current_ratio:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Current Ratio: {current_ratio:.2f}", style=normal_style)
             doc.add_paragraph(f"The current ratio of {current_ratio:.2f} is {cr_analysis} the industry average of {industry_cr:.2f}. " +
                             ("This indicates strong short-term liquidity position." if current_ratio > industry_cr else 
                              "This may indicate potential challenges in meeting short-term obligations."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Quick Ratio
             quick_ratio = metrics.loc['Quick Ratio', recent_year]
             industry_qr = metrics.loc['Quick Ratio', 'Industry Average']
             qr_analysis = "above" if quick_ratio > industry_qr else "below"
             
-            doc.add_paragraph(f"Quick Ratio: {quick_ratio:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Quick Ratio: {quick_ratio:.2f}", style=normal_style)
             doc.add_paragraph(f"The quick ratio of {quick_ratio:.2f} is {qr_analysis} the industry average of {industry_qr:.2f}. " +
                             ("This indicates strong ability to meet short-term obligations without relying on inventory sales." 
                              if quick_ratio > industry_qr else 
                              "This may indicate potential challenges in meeting immediate short-term obligations without selling inventory."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # 2. Efficiency Ratios
             doc.add_heading("Efficiency Ratios", level=2)
             doc.add_paragraph("Efficiency ratios measure how effectively the company uses its assets and manages its operations.", 
-                            style='Normal Style')
+                            style=normal_style)
             
             # Asset Turnover Ratios
             cat = metrics.loc['Current Asset Turnover', recent_year]
             industry_cat = metrics.loc['Current Asset Turnover', 'Industry Average']
             cat_analysis = "above" if cat > industry_cat else "below"
             
-            doc.add_paragraph(f"Current Asset Turnover: {cat:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Current Asset Turnover: {cat:.2f}", style=normal_style)
             doc.add_paragraph(f"The current asset turnover ratio of {cat:.2f} is {cat_analysis} the industry average of {industry_cat:.2f}. " +
                             ("This indicates efficient use of current assets in generating revenue." 
                              if cat > industry_cat else 
                              "This may indicate room for improvement in utilizing current assets to generate revenue."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             tat = metrics.loc['Total Asset Turnover', recent_year]
             industry_tat = metrics.loc['Total Asset Turnover', 'Industry Average']
             tat_analysis = "above" if tat > industry_tat else "below"
             
-            doc.add_paragraph(f"Total Asset Turnover: {tat:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Total Asset Turnover: {tat:.2f}", style=normal_style)
             doc.add_paragraph(f"The total asset turnover ratio of {tat:.2f} is {tat_analysis} the industry average of {industry_tat:.2f}. " +
                             ("This indicates efficient use of all assets in generating revenue." 
                              if tat > industry_tat else 
                              "This may indicate room for improvement in utilizing all assets to generate revenue."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Days Sales Outstanding
             if 'Days Sales Outstanding' in metrics.index and metrics.loc['Days Sales Outstanding', recent_year] > 0:
@@ -883,70 +914,70 @@ def download():
                 industry_dso = metrics.loc['Days Sales Outstanding', 'Industry Average']
                 dso_analysis = "below" if dso < industry_dso else "above"  # Lower is better for DSO
                 
-                doc.add_paragraph(f"Days Sales Outstanding: {dso:.2f}", style='Normal Style')
+                doc.add_paragraph(f"Days Sales Outstanding: {dso:.2f}", style=normal_style)
                 doc.add_paragraph(f"The days sales outstanding of {dso:.2f} days is {dso_analysis} the industry average of {industry_dso:.2f} days. " +
                                 ("This indicates efficient collection of receivables." 
                                  if dso < industry_dso else 
                                  "This may indicate room for improvement in receivables collection practices."), 
-                                 style='Normal Style')
+                                 style=normal_style)
             
             # 3. Profitability Ratios
             doc.add_heading("Profitability Ratios", level=2)
             doc.add_paragraph("Profitability ratios measure the company's ability to generate profits relative to revenue, assets, and equity.", 
-                            style='Normal Style')
+                            style=normal_style)
             
             # Profit Margin
             pm = metrics.loc['Profit Margin', recent_year]
             industry_pm = metrics.loc['Profit Margin', 'Industry Average']
             pm_analysis = "above" if pm > industry_pm else "below"
             
-            doc.add_paragraph(f"Profit Margin: {pm:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Profit Margin: {pm:.2f}", style=normal_style)
             doc.add_paragraph(f"The profit margin of {pm:.2f} is {pm_analysis} the industry average of {industry_pm:.2f}. " +
                             ("This indicates strong ability to convert revenue into profits." 
                              if pm > industry_pm else 
                              "This may indicate challenges in controlling costs or pricing strategy."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Return on Equity
             roe = metrics.loc['Return on Equity', recent_year]
             industry_roe = metrics.loc['Return on Equity', 'Industry Average']
             roe_analysis = "above" if roe > industry_roe else "below"
             
-            doc.add_paragraph(f"Return on Equity: {roe:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Return on Equity: {roe:.2f}", style=normal_style)
             doc.add_paragraph(f"The return on equity of {roe:.2f} is {roe_analysis} the industry average of {industry_roe:.2f}. " +
                             ("This indicates efficient use of shareholder equity in generating profits." 
                              if roe > industry_roe else 
                              "This may indicate room for improvement in generating returns for shareholders."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Basic Earning Power
             bep = metrics.loc['Basic Earning Power', recent_year]
             industry_bep = metrics.loc['Basic Earning Power', 'Industry Average']
             bep_analysis = "above" if bep > industry_bep else "below"
             
-            doc.add_paragraph(f"Basic Earning Power: {bep:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Basic Earning Power: {bep:.2f}", style=normal_style)
             doc.add_paragraph(f"The basic earning power ratio of {bep:.2f} is {bep_analysis} the industry average of {industry_bep:.2f}. " +
                             ("This indicates strong operational efficiency in generating earnings from assets." 
                              if bep > industry_bep else 
                              "This may indicate room for improvement in generating earnings from assets."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # 4. Solvency Ratios
             doc.add_heading("Solvency Ratios", level=2)
             doc.add_paragraph("Solvency ratios measure the company's ability to meet long-term obligations.", 
-                            style='Normal Style')
+                            style=normal_style)
             
             # Debt Ratio
             dr = metrics.loc['Debt Ratio', recent_year]
             industry_dr = metrics.loc['Debt Ratio', 'Industry Average']
             dr_analysis = "below" if dr < industry_dr else "above"  # Lower is generally better for debt ratio
             
-            doc.add_paragraph(f"Debt Ratio: {dr:.2f}", style='Normal Style')
+            doc.add_paragraph(f"Debt Ratio: {dr:.2f}", style=normal_style)
             doc.add_paragraph(f"The debt ratio of {dr:.2f} is {dr_analysis} the industry average of {industry_dr:.2f}. " +
                             ("This indicates lower leverage and potentially lower financial risk." 
                              if dr < industry_dr else 
                              "This indicates higher leverage, which may increase financial risk but also potential returns."), 
-                             style='Normal Style')
+                             style=normal_style)
             
             # Conclusion
             doc.add_heading("Conclusion", level=1)
@@ -997,7 +1028,7 @@ def download():
             else:
                 conclusion_text += "challenging, with several metrics falling below industry averages."
             
-            doc.add_paragraph(conclusion_text, style='Normal Style')
+            doc.add_paragraph(conclusion_text, style=normal_style)
             
             # Policy Recommendations
             doc.add_heading("Policy Recommendations", level=1)
@@ -1005,50 +1036,54 @@ def download():
             # Liquidity recommendations
             if current_ratio < industry_cr:
                 doc.add_paragraph("Liquidity Management:", style=heading_style)
-                doc.add_paragraph("• Consider strategies to improve the current ratio, such as reducing short-term debt or increasing current assets.", style='Normal Style')
-                doc.add_paragraph("• Implement more effective working capital management practices.", style='Normal Style')
+                doc.add_paragraph("• Consider strategies to improve the current ratio, such as reducing short-term debt or increasing current assets.", style=normal_style)
+                doc.add_paragraph("• Implement more effective working capital management practices.", style=normal_style)
             
             # Efficiency recommendations
             if tat < industry_tat:
                 doc.add_paragraph("Asset Utilization:", style=heading_style)
-                doc.add_paragraph("• Review asset management practices to improve revenue generation from existing assets.", style='Normal Style')
-                doc.add_paragraph("• Consider divesting underperforming assets or improving their productivity.", style='Normal Style')
+                doc.add_paragraph("• Review asset management practices to improve revenue generation from existing assets.", style=normal_style)
+                doc.add_paragraph("• Consider divesting underperforming assets or improving their productivity.", style=normal_style)
             
             # If DSO is high
             if 'Days Sales Outstanding' in metrics.index and metrics.loc['Days Sales Outstanding', recent_year] > industry_dso:
                 doc.add_paragraph("Accounts Receivable Management:", style=heading_style)
-                doc.add_paragraph("• Implement more efficient credit and collection policies to reduce days sales outstanding.", style='Normal Style')
-                doc.add_paragraph("• Consider early payment incentives or stricter credit terms.", style='Normal Style')
+                doc.add_paragraph("• Implement more efficient credit and collection policies to reduce days sales outstanding.", style=normal_style)
+                doc.add_paragraph("• Consider early payment incentives or stricter credit terms.", style=normal_style)
             
             # Profitability recommendations
             if pm < industry_pm:
                 doc.add_paragraph("Profitability Enhancement:", style=heading_style)
-                doc.add_paragraph("• Analyze cost structure to identify potential areas for cost reduction.", style='Normal Style')
-                doc.add_paragraph("• Review pricing strategies to improve profit margins.", style='Normal Style')
+                doc.add_paragraph("• Analyze cost structure to identify potential areas for cost reduction.", style=normal_style)
+                doc.add_paragraph("• Review pricing strategies to improve profit margins.", style=normal_style)
             
             # Debt management recommendations
             if dr > industry_dr:
                 doc.add_paragraph("Debt Management:", style=heading_style)
-                doc.add_paragraph("• Consider strategies to reduce the overall debt level to align more closely with industry averages.", style='Normal Style')
-                doc.add_paragraph("• Evaluate the cost of debt versus equity funding for future initiatives.", style='Normal Style')
+                doc.add_paragraph("• Consider strategies to reduce the overall debt level to align more closely with industry averages.", style=normal_style)
+                doc.add_paragraph("• Evaluate the cost of debt versus equity funding for future initiatives.", style=normal_style)
             
             # General recommendations for all companies
             doc.add_paragraph("General Recommendations:", style=heading_style)
-            doc.add_paragraph("• Regularly monitor financial ratios against industry benchmarks to identify trends and areas for improvement.", style='Normal Style')
-            doc.add_paragraph("• Develop a comprehensive financial strategy that addresses the specific strengths and weaknesses identified in this analysis.", style='Normal Style')
-            doc.add_paragraph("• Consider the impact of macroeconomic factors and industry trends when interpreting financial metrics.", style='Normal Style')
+            doc.add_paragraph("• Regularly monitor financial ratios against industry benchmarks to identify trends and areas for improvement.", style=normal_style)
+            doc.add_paragraph("• Develop a comprehensive financial strategy that addresses the specific strengths and weaknesses identified in this analysis.", style=normal_style)
+            doc.add_paragraph("• Consider the impact of macroeconomic factors and industry trends when interpreting financial metrics.", style=normal_style)
             
             # Save document to BytesIO
             output = io.BytesIO()
-            doc.save(output)
-            output.seek(0)
             
-            return send_file(
-                output,
-                mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                as_attachment=True,
-                download_name=f"{ticker}_financial_analysis.docx"
-            )
+            try:
+                doc.save(output)
+                output.seek(0)
+                
+                return send_file(
+                    output,
+                    mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    as_attachment=True,
+                    download_name=f"{ticker}_financial_analysis.docx"
+                )
+            except Exception as save_error:
+                return jsonify({'error': f'Error saving document: {str(save_error)}'})
         
         else:
             return jsonify({'error': 'Unsupported format requested'})
