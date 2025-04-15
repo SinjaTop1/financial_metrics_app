@@ -88,7 +88,7 @@
             display: none;
         }
         .chart-wrapper {
-            height: 400px;
+            height: 450px;
             margin-bottom: 30px;
         }
         .btn-primary {
@@ -102,6 +102,24 @@
         .btn-outline-primary:hover {
             background-color: #0d6efd;
             color: white;
+        }
+        .download-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .radar-chart {
+            height: 600px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+        .explanation-card {
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        .explanation-card:hover {
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -152,23 +170,42 @@
                     <div class="mb-4">
                         <h2 id="company-title" class="text-center mb-4"></h2>
                         
-                        <form id="download-form" method="post" action="/download" class="text-center mb-4">
-                            <input type="hidden" id="download-company" name="company">
-                            <input type="hidden" id="download-years" name="years">
-                            <button type="submit" class="btn btn-outline-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
-                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                                </svg>
-                                Download Excel
-                            </button>
-                        </form>
+                        <div class="download-buttons">
+                            <form id="excel-form" method="post" action="/download">
+                                <input type="hidden" id="download-company" name="company">
+                                <input type="hidden" id="download-years" name="years">
+                                <input type="hidden" name="format" value="excel">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel" viewBox="0 0 16 16">
+                                        <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+                                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                    </svg>
+                                    Download Excel
+                                </button>
+                            </form>
+                            
+                            <form id="word-form" method="post" action="/download">
+                                <input type="hidden" id="download-company-word" name="company">
+                                <input type="hidden" id="download-years-word" name="years">
+                                <input type="hidden" name="format" value="word">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-word" viewBox="0 0 16 16">
+                                        <path d="M5.485 6.879a.5.5 0 1 0-.97.242l1.5 6a.5.5 0 0 0 .967.01L8 9.402l1.018 3.73a.5.5 0 0 0 .967-.01l1.5-6a.5.5 0 0 0-.97-.242l-1.036 4.144-.997-3.655a.5.5 0 0 0-.964 0l-.997 3.655L5.485 6.88z"/>
+                                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                    </svg>
+                                    Download Report (Word)
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="tabs-container">
                         <ul class="nav nav-tabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab" aria-controls="metrics" aria-selected="true">Key Metrics</button>
+                                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">Overview</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab" aria-controls="metrics" aria-selected="false">Key Metrics</button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab" aria-controls="charts" aria-selected="false">Charts</button>
@@ -179,7 +216,29 @@
                         </ul>
                         
                         <div class="tab-content">
-                            <div class="tab-pane fade show active" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
+                            <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                                <div class="mt-4">
+                                    <div class="radar-chart" id="radar-chart"></div>
+                                    
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h4 class="mb-0">Financial Performance Summary</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="lead">The radar chart above shows how the company performs across key financial dimensions compared to industry averages.</p>
+                                            <ul>
+                                                <li><strong>Liquidity:</strong> Ability to meet short-term obligations</li>
+                                                <li><strong>Efficiency:</strong> How well assets are utilized to generate revenue</li>
+                                                <li><strong>Profitability:</strong> Ability to generate profit from operations</li>
+                                                <li><strong>Solvency:</strong> Long-term financial stability and debt management</li>
+                                            </ul>
+                                            <p>A score above 1.0 indicates better performance than the industry average in that category.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
                                 <div id="metrics-container" class="mt-4"></div>
                             </div>
                             
@@ -199,6 +258,11 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="chart-wrapper" id="solvency-chart"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="dso-chart-row" style="display: none;">
+                                        <div class="col-md-12">
+                                            <div class="chart-wrapper" id="dso-chart"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -229,7 +293,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="card metric-card h-100">
+                        <div class="card explanation-card h-100">
                             <div class="card-header">Liquidity Ratios</div>
                             <div class="card-body">
                                 <p><strong>Current Ratio</strong>: Current Assets / Current Liabilities<br>
@@ -242,7 +306,7 @@
                     </div>
                     
                     <div class="col-md-6">
-                        <div class="card metric-card h-100">
+                        <div class="card explanation-card h-100">
                             <div class="card-header">Efficiency Ratios</div>
                             <div class="card-body">
                                 <p><strong>Current Asset Turnover</strong>: Revenue / Average Current Assets<br>
@@ -260,7 +324,7 @@
                 
                 <div class="row mt-3">
                     <div class="col-md-6">
-                        <div class="card metric-card h-100">
+                        <div class="card explanation-card h-100">
                             <div class="card-header">Profitability Ratios</div>
                             <div class="card-body">
                                 <p><strong>Profit Margin</strong>: Net Income / Revenue<br>
@@ -276,7 +340,7 @@
                     </div>
                     
                     <div class="col-md-6">
-                        <div class="card metric-card h-100">
+                        <div class="card explanation-card h-100">
                             <div class="card-header">Solvency Ratios</div>
                             <div class="card-body">
                                 <p><strong>Debt Ratio</strong>: Total Liabilities / Total Assets<br>
@@ -306,6 +370,8 @@
                 // Update download form values
                 $('#download-company').val(company);
                 $('#download-years').val(years);
+                $('#download-company-word').val(company);
+                $('#download-years-word').val(years);
                 
                 // Show loading indicator and hide results
                 $('#loading').show();
@@ -343,6 +409,17 @@
                         Plotly.newPlot('profitability-chart', JSON.parse(response.charts.profitability).data, JSON.parse(response.charts.profitability).layout);
                         Plotly.newPlot('solvency-chart', JSON.parse(response.charts.solvency).data, JSON.parse(response.charts.solvency).layout);
                         
+                        // Create radar chart (overview)
+                        Plotly.newPlot('radar-chart', JSON.parse(response.charts.radar).data, JSON.parse(response.charts.radar).layout);
+                        
+                        // Create DSO chart if available
+                        if (response.charts.dso) {
+                            Plotly.newPlot('dso-chart', JSON.parse(response.charts.dso).data, JSON.parse(response.charts.dso).layout);
+                            $('#dso-chart-row').show();
+                        } else {
+                            $('#dso-chart-row').hide();
+                        }
+                        
                         // Show charts container
                         $('#charts-container').show();
                         
@@ -355,6 +432,10 @@
                             Plotly.relayout('efficiency-chart', {});
                             Plotly.relayout('profitability-chart', {});
                             Plotly.relayout('solvency-chart', {});
+                            Plotly.relayout('radar-chart', {});
+                            if (response.charts.dso) {
+                                Plotly.relayout('dso-chart', {});
+                            }
                         });
                     },
                     error: function(xhr, status, error) {
